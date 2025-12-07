@@ -5,6 +5,7 @@ import '../providers/auth_provider.dart';
 import '../models/delivery_model.dart';
 import '../services/delivery_service.dart';
 import '../utils/responsive_helper.dart';
+import 'delivery_details_screen.dart';
 
 class DeliveriesScreen extends StatefulWidget {
   const DeliveriesScreen({super.key});
@@ -136,8 +137,21 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                               final delivery = _deliveries[index];
                               return Card(
                                 margin: EdgeInsets.only(bottom: isMobile ? 12 : 16),
-                                child: ListTile(
-                                  contentPadding: EdgeInsets.all(isMobile ? 16 : 20),
+                                child: InkWell(
+                                  onTap: () async {
+                                    final result = await Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) => DeliveryDetailsScreen(
+                                          delivery: delivery,
+                                        ),
+                                      ),
+                                    );
+                                    if (result == true) {
+                                      _loadDeliveries();
+                                    }
+                                  },
+                                  child: ListTile(
+                                    contentPadding: EdgeInsets.all(isMobile ? 16 : 20),
                           leading: CircleAvatar(
                             backgroundColor: _getStatusColor(delivery.status),
                             child: const Icon(Icons.local_shipping, color: Colors.white),
@@ -214,8 +228,9 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                                   },
                                 )
                               : null,
-                        ),
-                              );
+                                    ),
+                                  ),
+                                );
                             },
                           ),
                         ),

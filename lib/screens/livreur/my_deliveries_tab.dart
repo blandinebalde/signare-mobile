@@ -5,6 +5,7 @@ import '../../providers/auth_provider.dart';
 import '../../models/delivery_model.dart';
 import '../../services/delivery_service.dart';
 import '../../utils/responsive_helper.dart';
+import '../delivery_details_screen.dart';
 
 class MyDeliveriesTab extends StatefulWidget {
   const MyDeliveriesTab({super.key});
@@ -31,12 +32,28 @@ class _MyDeliveriesTabState extends State<MyDeliveriesTab> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final user = authProvider.currentUser;
       
-      final deliveries = await _deliveryService.getAllDeliveries(
-        status: _selectedFilter != 'Tous' ? _selectedFilter : null,
+      // Mapper le filtre sélectionné vers le format backend pour l'API
+      String? backendStatus = _mapFilterToBackendStatus(_selectedFilter);
+      
+      // Charger les livraisons du livreur avec le filtre backend
+      List<Delivery> allDeliveries = await _deliveryService.getAllDeliveries(
+        status: backendStatus,
         livreurId: user?.id,
       );
+      
+      // Filtrer également côté client pour s'assurer de la correspondance exacte
+      // (au cas où le backend renvoie des statuts dans un format différent)
+      List<Delivery> filteredDeliveries;
+      if (_selectedFilter == 'Tous') {
+        filteredDeliveries = allDeliveries;
+      } else {
+        filteredDeliveries = allDeliveries.where((delivery) {
+          return _matchesFilter(delivery, _selectedFilter);
+        }).toList();
+      }
+      
       setState(() {
-        _deliveries = deliveries;
+        _deliveries = filteredDeliveries;
         _isLoading = false;
       });
     } catch (e) {
@@ -49,6 +66,47 @@ class _MyDeliveriesTabState extends State<MyDeliveriesTab> {
           ),
         );
       }
+    }
+  }
+
+  /// Mappe le filtre frontend vers le format backend pour l'API
+  String? _mapFilterToBackendStatus(String filter) {
+    switch (filter) {
+      case 'PENDING':
+        return 'EN_ATTENTE'; // Le backend utilise EN_ATTENTE
+      case 'IN_TRANSIT':
+        return 'EN_COURS'; // Le backend utilise EN_COURS
+      case 'DELIVERED':
+        return 'LIVREE'; // Le backend utilise LIVREE
+      default:
+        return null; // Tous
+    }
+  }
+
+  /// Vérifie si une livraison correspond au filtre sélectionné
+  /// Gère les deux formats possibles : anglais (PENDING, IN_TRANSIT, DELIVERED) 
+  /// et français (EN_ATTENTE, EN_COURS, LIVREE)
+  bool _matchesFilter(Delivery delivery, String filter) {
+    // Récupérer le statut (peut être dans status ou statutLivraison)
+    final status = (delivery.status?.toUpperCase() ?? 
+                   delivery.statutLivraison?.toUpperCase() ?? '').trim();
+    
+    if (status.isEmpty) return false;
+    
+    switch (filter) {
+      case 'PENDING':
+        // En attente: PENDING ou EN_ATTENTE
+        return status == 'PENDING' || status == 'EN_ATTENTE';
+      case 'IN_TRANSIT':
+        // En cours: IN_TRANSIT ou EN_COURS
+        return status == 'IN_TRANSIT' || status == 'EN_COURS';
+      case 'DELIVERED':
+        // Livrées: DELIVERED ou LIVREE
+        return status == 'DELIVERED' || status == 'LIVREE';
+      case 'Tous':
+        return true;
+      default:
+        return true;
     }
   }
 
@@ -172,8 +230,17 @@ class _MyDeliveriesTabState extends State<MyDeliveriesTab> {
                                     margin: EdgeInsets.only(bottom: isMobile ? 12 : 16),
                                     elevation: 2,
                                     child: InkWell(
-                                      onTap: () {
-                                        // TODO: Navigate to delivery details
+                                      onTap: () async {
+                                        final result = await Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (context) => DeliveryDetailsScreen(
+                                              delivery: delivery,
+                                            ),
+                                          ),
+                                        );
+                                        if (result == true) {
+                                          _loadDeliveries();
+                                        }
                                       },
                                       child: Padding(
                                         padding: EdgeInsets.all(isMobile ? 16 : 20),
@@ -236,49 +303,7 @@ class _MyDeliveriesTabState extends State<MyDeliveriesTab> {
                                         '${NumberFormat('#,###').format(delivery.montantTotal)} FCFA',
                                       ),
                                     const SizedBox(height: 8),
-                                    if (delivery.status != 'DELIVERED')
-                                      SizedBox(
-                                        width: double.infinity,
-                                        child: ElevatedButton.icon(
-                                          style: ElevatedButton.styleFrom(
-                                            padding: EdgeInsets.symmetric(
-                                              horizontal: isMobile ? 16 : 24,
-                                              vertical: isMobile ? 12 : 16,
-                                            ),
-                                          ),
-                                          onPressed: () async {
-                                            try {
-                                              await _deliveryService.updateDeliveryStatus(
-                                                delivery.id!,
-                                                'IN_TRANSIT',
-                                              );
-                                              _loadDeliveries();
-                                              if (mounted) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  const SnackBar(
-                                                    content: Text('Livraison mise à jour'),
-                                                    backgroundColor: Colors.green,
-                                                  ),
-                                                );
-                                              }
-                                            } catch (e) {
-                                              if (mounted) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  SnackBar(
-                                                    content: Text('Erreur: ${e.toString()}'),
-                                                    backgroundColor: Colors.red,
-                                                  ),
-                                                );
-                                              }
-                                            }
-                                          },
-                                          icon: const Icon(Icons.play_arrow),
-                                          label: Text(
-                                            isMobile ? 'Commencer' : 'Commencer la livraison',
-                                            style: TextStyle(fontSize: isMobile ? 12 : 14),
-                                          ),
-                                        ),
-                                      ),
+                                    // Le bouton "Commencer la livraison" est maintenant dans l'écran de détails
                                   ],
                                 ),
                               ),

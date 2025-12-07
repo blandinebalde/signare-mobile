@@ -1,0 +1,58 @@
+name: gestion_stock_app
+description: A Flutter application for stock management
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: ">=3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  
+  # HTTP & Networking
+  http: ^1.1.0
+  dio: ^5.4.0
+  
+  # State Management
+  provider: ^6.1.1
+  
+  # Local Storage
+  shared_preferences: ^2.2.2
+  sqflite: ^2.3.0
+  path_provider: ^2.1.1
+  open_file: ^3.5.0
+  
+  # UI & Navigation
+  flutter_svg: ^2.0.9
+  cached_network_image: ^3.3.0
+  
+  # Utilities
+  # intl is provided by flutter_localizations, no need to specify
+  json_annotation: ^4.8.1
+  equatable: ^2.0.5
+  
+  # Charts & Graphs
+  fl_chart: ^0.65.0
+  
+  # Notifications
+  flutter_local_notifications: ^16.3.0
+  workmanager: ^0.5.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  build_runner: ^2.4.7
+  json_serializable: ^6.7.1
+
+flutter:
+  uses-material-design: true
+  # Assets - décommentez si vous avez des fichiers dans ces dossiers
+  # assets:
+  #   - assets/images/
+  #   - assets/icons/
